@@ -23,9 +23,9 @@ jobs:
         image: postgres:14.1-alpine
         # Provide the password for postgres
         env:
-         POSTGRES_USER : postgres
-         POSTGRES_PASSWORD : 123456
-         POSTGRES_DB: simple_bank
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: 123456
+          POSTGRES_DB: simple_bank
           # Set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
@@ -45,7 +45,10 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Install Migrate
-        run: go get -v -u github.com/golang-migrate/migrate/cmd/migrate
+        run: |
+          curl -s https://packagecloud.io/install/repositories/golang-migrate/migrate/script.deb.sh | sudo bash
+          sudo apt-get update
+          sudo apt-get install migrate
 
       - name: Run migrations
         run: make migrateup
