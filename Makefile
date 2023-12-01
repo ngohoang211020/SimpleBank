@@ -23,4 +23,6 @@ test:
 	go test -v -cover -short ./...
 server:
 	go run main.go
-.PHONY:	postgres migrateup migratedown
+mock:
+	mockgen -package mockdb -destination db/mock/store.go simplebank/db/sqlc Store
+.PHONY:	postgres migrateup migratedown mock
