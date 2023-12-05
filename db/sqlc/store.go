@@ -2,8 +2,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Store interface {
@@ -14,18 +14,18 @@ type Store interface {
 // SQLStore provides all functions to execute SQL queries and all transaction
 type SQLStore struct {
 	*Queries
-	db *sql.DB
+	connPool *pgxpool.Pool
 }
 
-func NewStore(db *sql.DB) *SQLStore {
+func NewStore(connPool *pgxpool.Pool) Store {
 	return &SQLStore{
-		db:      db,
-		Queries: New(db),
+		connPool: connPool,
+		Queries:  New(connPool),
 	}
 }
 
 func (store *SQLStore) execTx(ctx context.Context, fn func(queries *Queries) error) error {
-	tx, err := store.db.BeginTx(ctx, nil)
+	tx, err := store.connPool.Begin(ctx)
 	if err != nil {
 		return err
 	}
@@ -33,12 +33,12 @@ func (store *SQLStore) execTx(ctx context.Context, fn func(queries *Queries) err
 	q := New(tx)
 	err = fn(q)
 	if err != nil {
-		if rbErr := tx.Rollback(); rbErr != nil {
+		if rbErr := tx.Rollback(ctx); rbErr != nil {
 			return fmt.Errorf("tx err: %v, rb err: %v", err, rbErr)
 		}
 	}
 
-	return tx.Commit()
+	return tx.Commit(ctx)
 }
 
 type TransferTxParams struct {
