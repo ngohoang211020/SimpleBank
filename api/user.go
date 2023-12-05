@@ -26,6 +26,16 @@ type usersResponse struct {
 	CreatedAt         pgtype.Timestamptz `json:"createdAt"`
 }
 
+func newUserResponse(user db.Users) usersResponse {
+	return usersResponse{
+		Username:          user.Username,
+		FullName:          user.FullName,
+		Email:             user.Email,
+		PasswordChangedAt: user.PasswordChangedAt,
+		CreatedAt:         user.CreatedAt,
+	}
+}
+
 func (server *Server) createUser(ctx *gin.Context) {
 	var req createUserRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -58,66 +68,27 @@ func (server *Server) createUser(ctx *gin.Context) {
 		return
 	}
 
-	userResponse := usersResponse{
-		Email:             user.Email,
-		CreatedAt:         user.CreatedAt,
-		FullName:          user.FullName,
-		PasswordChangedAt: user.PasswordChangedAt,
-		Username:          user.Username,
-	}
-	ctx.JSON(http.StatusOK, userResponse)
+	ctx.JSON(http.StatusOK, newUserResponse(user))
 }
 
-type getUserRequest struct {
-	Username string `uri:"username" binding:"required,alphanum"`
+type loginUserRequest struct {
+	Username string `json:"username" binding:"required,alphanum"`
+	Password string `json:"password" binding:"required,min=6"`
 }
 
-func newUserResponse(user db.Users) usersResponse {
-	return usersResponse{
-		Username:          user.Username,
-		FullName:          user.FullName,
-		Email:             user.Email,
-		PasswordChangedAt: user.PasswordChangedAt,
-		CreatedAt:         user.CreatedAt,
-	}
+type loginUserResponse struct {
+	AccessToken string        `json:"access_token"`
+	User        usersResponse `json:"user"`
 }
 
-func (server *Server) getUser(ctx *gin.Context) {
-	var req getUserRequest
-	if err := ctx.ShouldBindUri(&req); err != nil {
+func (server *Server) loginUser(ctx *gin.Context) {
+	var req loginUserRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
 	user, err := server.store.GetUser(ctx, req.Username)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			ctx.JSON(http.StatusNotFound, errorResponse(err))
-			return
-		}
-		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
-		return
-	}
-
-	ctx.JSON(http.StatusOK, user)
-}
-
-type listUserRequest struct {
-	PageID   int32 `form:"page_id" binding:"required,min=1"`
-	PageSize int32 `form:"page_size" binding:"required,min=5,max=10"`
-}
-
-func (server *Server) listUser(ctx *gin.Context) {
-	var req listUserRequest
-	if err := ctx.ShouldBindQuery(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
-		return
-	}
-
-	users, err := server.store.ListUsers(ctx, db.ListUsersParams{
-		Offset: (req.PageID - 1) * req.PageSize,
-		Limit:  req.PageSize,
-	})
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -128,5 +99,25 @@ func (server *Server) listUser(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, users)
+	err = util.CheckPassword(req.Password, user.HashedPassword)
+
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, errorResponse(err))
+		return
+	}
+
+	accessToken, err := server.tokenMarker.CreateToken(
+		user.Username,
+		server.config.AccessTokenDuration)
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	rsp := loginUserResponse{
+		AccessToken: accessToken,
+		User:        newUserResponse(user),
+	}
+	ctx.JSON(http.StatusOK, rsp)
 }
