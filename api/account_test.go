@@ -236,11 +236,13 @@ func TestListAccountsAPI(t *testing.T) {
 	type Query struct {
 		pageID   int
 		pageSize int
+		owner    string
 	}
 
 	testCases := []struct {
 		name          string
 		query         Query
+		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(recoder *httptest.ResponseRecorder)
 	}{
@@ -249,11 +251,15 @@ func TestListAccountsAPI(t *testing.T) {
 			query: Query{
 				pageID:   1,
 				pageSize: n,
+				owner:    user.Username,
+			}, setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.ListAccountsParams{
 					Limit:  int32(n),
 					Offset: 0,
+					Owner:  user.Username,
 				}
 
 				store.EXPECT().
@@ -270,7 +276,9 @@ func TestListAccountsAPI(t *testing.T) {
 			name: "InternalError",
 			query: Query{
 				pageID:   1,
-				pageSize: n,
+				pageSize: n, owner: user.Username,
+			}, setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -286,7 +294,9 @@ func TestListAccountsAPI(t *testing.T) {
 			name: "InvalidPageID",
 			query: Query{
 				pageID:   -1,
-				pageSize: n,
+				pageSize: n, owner: user.Username,
+			}, setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -301,7 +311,9 @@ func TestListAccountsAPI(t *testing.T) {
 			name: "InvalidPageSize",
 			query: Query{
 				pageID:   1,
-				pageSize: 100000,
+				pageSize: 100000, owner: user.Username,
+			}, setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
@@ -337,6 +349,7 @@ func TestListAccountsAPI(t *testing.T) {
 			q.Add("page_id", fmt.Sprintf("%d", tc.query.pageID))
 			q.Add("page_size", fmt.Sprintf("%d", tc.query.pageSize))
 			request.URL.RawQuery = q.Encode()
+			tc.setupAuth(t, request, server.tokenMarker)
 
 			server.router.ServeHTTP(recorder, request)
 			tc.checkResponse(recorder)
