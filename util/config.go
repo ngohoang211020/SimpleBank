@@ -13,6 +13,7 @@ type Configuration struct {
 	Port                string        `mapstructure:"PORT"`
 	TokenSymmetricKey   string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
 	AccessTokenDuration time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
+	MigrationURL        string        `mapstructure:"MIGRATION_URL"`
 }
 
 var Config Configuration

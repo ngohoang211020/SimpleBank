@@ -1,0 +1,36 @@
+version: '3.9'
+services:
+  postgres:
+    image: postgres:14.1-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=123456
+    ports:
+      - '5432:5432'
+    volumes:
+      - data-volume:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d
+      #Creating tables
+      #To create the tables in our database we need to copy our create_tables.sql script to/docker-entrypoint-initdb.d/
+  api:
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    environment:
+      - DB_SOURCE=postgresql://postgres:123456@postgres:5432/simple_bank?sslmode=disable
+    entrypoint:
+      [
+        "/app/wait-for.sh",
+        "postgres:5432",
+        "--",
+        "/app/start.sh"
+      ]
+    command: [ "/app/main" ]
+volumes:
+  data-volume:
