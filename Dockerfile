@@ -20,10 +20,11 @@ COPY app.env .
 COPY start.sh .
 COPY wait-for.sh .
 COPY db/migration ./db/migration
-
+ENV GIN_MODE=release
+ENV PORT=8000
 # Informs Docker that the container will listen on port 8080 at runtime.
 #However, this does not actually publish the port; it serves as documentation for users of the image
-EXPOSE 8000
+EXPOSE $PORT
 # Specifies the default command to run when the container starts.
 #it's running the binary executable "main" located in the /app directory inside the container.
 #This means that when you run a container from this image, it will automatically execute the "main" binary as the main process.
