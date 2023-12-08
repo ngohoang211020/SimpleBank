@@ -1,31 +1,32 @@
-name: Deploy to ECR
+name: Deploy to ECR Public
 
 on:
   push:
     branches:
       - master
+
 jobs:
   deploy:
-    name: Build Image
+    name: Build and Push Docker Image
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v2
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1 # More information on this action can be found below in the 'AWS Credentials' section
+        uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-southeast-1
 
-      - name: Login to Amazon ECR
+      - name: Login to Amazon ECR Public
         id: login-ecr
-        uses: |
-          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/x3w0m3j5
+        run: |
+          aws ecr-public get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin public.ecr.aws/x3w0m3j5
 
-      - name: Build, tag, and push image to Amazon ECR
+      - name: Build, tag, and push image to Amazon ECR Public
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: simplebank
