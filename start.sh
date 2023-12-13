@@ -1,4 +1,4 @@
-#chmod +x start.sh
+chmod +x start.sh
 
 set -e
 
