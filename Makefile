@@ -18,7 +18,6 @@ new_migration:
 	migrate create -ext sql -dir db/migration -seq $(name)
 db_docs:
 	dbdocs build doc/db.dbml
-
 db_schema:
 	dbml2sql --postgres -o doc/schema.sql doc/db.dbml
 sqlc:
@@ -29,5 +28,9 @@ server:
 	go run main.go
 mock:
 	mockgen -package mockdb -destination db/mock/store.go simplebank/db/sqlc Store
-
-.PHONY:	postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 new_migration db_docs db_schema mock sqlc test server
+gen-go:
+	rm -rf pb/
+	mkdir pb
+	protoc --proto_path=proto proto/**/*.proto --go_out=pb
+	protoc --proto_path=proto proto/**/*.proto --go-grpc_out=pb
+.PHONY:	postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 new_migration db_docs db_schema mock sqlc test server gen-go

@@ -10,7 +10,8 @@ import (
 type Configuration struct {
 	DBDriver             string        `mapstructure:"DB_DRIVER"`
 	DBSource             string        `mapstructure:"DB_SOURCE"`
-	Port                 string        `mapstructure:"PORT"`
+	GinPort              string        `mapstructure:"GIN_PORT"`
+	GrpcPort             string        `mapstructure:"GRPC_PORT"`
 	TokenSymmetricKey    string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
 	AccessTokenDuration  time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
 	MigrationURL         string        `mapstructure:"MIGRATION_URL"`
