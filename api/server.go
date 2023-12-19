@@ -12,10 +12,10 @@ import (
 
 // Server servers HTTP requests for our banking service
 type Server struct {
-	store       db.Store
-	tokenMarker token.Maker
-	router      *gin.Engine
-	config      *util.Configuration
+	store      db.Store
+	tokenMaker token.Maker
+	router     *gin.Engine
+	config     *util.Configuration
 }
 
 func NewServer(config *util.Configuration, store db.Store) (*Server, error) {
@@ -24,9 +24,9 @@ func NewServer(config *util.Configuration, store db.Store) (*Server, error) {
 		return nil, fmt.Errorf("cannot create token maker: %w", err)
 	}
 	server := &Server{
-		store:       store,
-		tokenMarker: tokenMaker,
-		config:      config,
+		store:      store,
+		tokenMaker: tokenMaker,
+		config:     config,
 	}
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
@@ -43,7 +43,7 @@ func (server *Server) setupRouter() {
 	router.POST("/users", server.createUser)
 	router.POST("/login", server.loginUser)
 
-	authRoutes := router.Group("/").Use(authMiddleware(server.tokenMarker))
+	authRoutes := router.Group("/").Use(authMiddleware(server.tokenMaker))
 
 	authRoutes.POST("/accounts", server.createAccount)
 	authRoutes.GET("/accounts/:id", server.getAccount)
