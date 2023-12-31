@@ -2,10 +2,10 @@ package gapi
 
 import (
 	"fmt"
-	db "simplebank/db/sqlc"
-	"simplebank/pb/user"
-	"simplebank/token"
-	"simplebank/util"
+	db "github.com/ngohoang211020/simplebank/db/sqlc"
+	user "github.com/ngohoang211020/simplebank/pb/user"
+	"github.com/ngohoang211020/simplebank/token"
+	"github.com/ngohoang211020/simplebank/util"
 )
 
 // GrpcServer serves gRPC requests for our banking service.
@@ -15,6 +15,7 @@ type GrpcServer struct {
 	tokenMaker token.Maker
 	user.UnimplementedUserServiceServer
 	user.UnimplementedAuthServiceServer
+	user.UnimplementedSimpleBankServer
 }
 
 // NewGrpcServer creates a new gRPC server

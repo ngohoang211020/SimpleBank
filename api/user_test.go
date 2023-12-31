@@ -8,14 +8,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/jackc/pgx/v5/pgconn"
+	mockdb "github.com/ngohoang211020/simplebank/db/mock"
+	db "github.com/ngohoang211020/simplebank/db/sqlc"
+	"github.com/ngohoang211020/simplebank/util"
 	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
-	mockdb "simplebank/db/mock"
-	db "simplebank/db/sqlc"
-	"simplebank/util"
 	"testing"
 )
 

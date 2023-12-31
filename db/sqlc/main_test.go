@@ -4,9 +4,9 @@ import (
 	"context"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/lib/pq"
+	"github.com/ngohoang211020/simplebank/util"
 	"log"
 	"os"
-	"simplebank/util"
 	"testing"
 )
 

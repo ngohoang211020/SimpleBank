@@ -1,13 +1,13 @@
-package gapi
+package util
 
 import (
+	db "github.com/ngohoang211020/simplebank/db/sqlc"
+	pb "github.com/ngohoang211020/simplebank/pb/user"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	db "simplebank/db/sqlc"
-	"simplebank/pb/user"
 )
 
-func convertUser(userDb db.Users) *user.User {
-	return &user.User{
+func ConvertUser(userDb db.Users) *pb.User {
+	return &pb.User{
 		Username:          userDb.Username,
 		FullName:          userDb.FullName,
 		Email:             userDb.Email,

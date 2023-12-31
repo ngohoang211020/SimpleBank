@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	db "github.com/ngohoang211020/simplebank/db/sqlc"
 	"net/http"
-	db "simplebank/db/sqlc"
 	"time"
 )
 

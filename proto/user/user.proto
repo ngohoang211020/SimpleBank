@@ -2,22 +2,14 @@ syntax = "proto3";
 
 package user;
 
-import "google/protobuf/timestamp.proto";
+import "user/common.proto";
 
-option go_package = "/user";
+option go_package = "github.com/ngohoang211020/SimpleBank";
 
 service UserService{
   rpc CreateUser(CreateUserRequest) returns  (CreateUserResponse) {};
   rpc UpdateUser(UpdateUserRequest) returns  (UpdateUserResponse) {};
-  rpc VerifyEmail(VerifyEmailRequest) returns  (VerifyEmailResponse) {};
-}
-
-message User {
-  string username = 1;
-  string full_name = 2;
-  string email = 3;
-  google.protobuf.Timestamp password_changed_at = 4;
-  google.protobuf.Timestamp created_at = 5;
+//  rpc VerifyEmail(VerifyEmailRequest) returns  (VerifyEmailResponse) {};
 }
 
 message CreateUserRequest {
@@ -42,11 +34,11 @@ message UpdateUserResponse {
   User user = 1;
 }
 
-message VerifyEmailRequest {
-  int64 email_id = 1;
-  string secret_code = 2;
-}
-
-message VerifyEmailResponse {
-  bool is_verified = 1;
-}
+//message VerifyEmailRequest {
+//  int64 email_id = 1;
+//  string secret_code = 2;
+//}
+//
+//message VerifyEmailResponse {
+//  bool is_verified = 1;
+//}

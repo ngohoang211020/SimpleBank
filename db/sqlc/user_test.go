@@ -2,8 +2,8 @@ package db
 
 import (
 	"context"
+	"github.com/ngohoang211020/simplebank/util"
 	"github.com/stretchr/testify/require"
-	"simplebank/util"
 	"testing"
 	"time"
 )

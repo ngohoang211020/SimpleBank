@@ -3,15 +3,16 @@ package gapi
 import (
 	"context"
 	"errors"
+	db "github.com/ngohoang211020/simplebank/db/sqlc"
+	util2 "github.com/ngohoang211020/simplebank/gapi/util"
+	pbuser "github.com/ngohoang211020/simplebank/pb/user"
+	"github.com/ngohoang211020/simplebank/util"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	db "simplebank/db/sqlc"
-	pbuser "simplebank/pb/user"
-	"simplebank/util"
 )
 
-func (server *GrpcServer) Login(ctx context.Context, req *pbuser.LoginUserRequest) (res *pbuser.LoginUserResponse, err error) {
+func (server *GrpcServer) LoginUser(ctx context.Context, req *pbuser.LoginUserRequest) (res *pbuser.LoginUserResponse, err error) {
 	user, err := server.store.GetUser(ctx, req.GetUsername())
 	if err != nil {
 		if errors.Is(err, db.ErrRecordNotFound) {
@@ -40,13 +41,14 @@ func (server *GrpcServer) Login(ctx context.Context, req *pbuser.LoginUserReques
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create refresh token")
 	}
+	mtdt := server.extractMetadata(ctx)
 
 	session, err := server.store.CreateSession(ctx, db.CreateSessionParams{
 		ID:           refreshPayload.ID,
 		Username:     user.Username,
-		RefreshToken: "",
-		UserAgent:    refreshToken,
-		ClientIp:     "",
+		RefreshToken: refreshToken,
+		UserAgent:    mtdt.UserAgent,
+		ClientIp:     mtdt.ClientIP,
 		IsBlocked:    false,
 		ExpiresAt:    refreshPayload.ExpiredAt,
 	})
@@ -55,7 +57,7 @@ func (server *GrpcServer) Login(ctx context.Context, req *pbuser.LoginUserReques
 	}
 
 	rsp := &pbuser.LoginUserResponse{
-		User:                  convertUser(user),
+		User:                  util2.ConvertUser(user),
 		SessionId:             session.ID.String(),
 		AccessToken:           accessToken,
 		RefreshToken:          refreshToken,

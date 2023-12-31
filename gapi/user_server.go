@@ -3,12 +3,15 @@ package gapi
 import (
 	"context"
 	"errors"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/lib/pq"
+	db "github.com/ngohoang211020/simplebank/db/sqlc"
+	util2 "github.com/ngohoang211020/simplebank/gapi/util"
+	pbuser "github.com/ngohoang211020/simplebank/pb/user"
+	"github.com/ngohoang211020/simplebank/util"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	db "simplebank/db/sqlc"
-	pbuser "simplebank/pb/user"
-	"simplebank/util"
+	"time"
 )
 
 func (server *GrpcServer) CreateUser(ctx context.Context, req *pbuser.CreateUserRequest) (*pbuser.CreateUserResponse, error) {
@@ -37,7 +40,51 @@ func (server *GrpcServer) CreateUser(ctx context.Context, req *pbuser.CreateUser
 	}
 
 	rsp := &pbuser.CreateUserResponse{
-		User: convertUser(user),
+		User: util2.ConvertUser(user),
+	}
+	return rsp, nil
+}
+
+func (server *GrpcServer) UpdateUser(ctx context.Context, req *pbuser.UpdateUserRequest) (*pbuser.UpdateUserResponse, error) {
+	arg := db.UpdateUserParams{
+		Username: req.GetUsername(),
+		FullName: pgtype.Text{
+			String: req.GetFullName(),
+			Valid:  req.FullName != nil,
+		},
+		Email: pgtype.Text{
+			String: req.GetEmail(),
+			Valid:  req.Email != nil,
+		},
+	}
+
+	if req.Password != nil {
+		hashedPassword, err := util.HashPassword(req.GetPassword())
+		if err != nil {
+			return nil, status.Errorf(codes.Internal, "failed to hash password: %s", err)
+		}
+
+		arg.HashedPassword = pgtype.Text{
+			String: hashedPassword,
+			Valid:  true,
+		}
+
+		arg.PasswordChangedAt = pgtype.Timestamptz{
+			Time:  time.Now(),
+			Valid: true,
+		}
+	}
+
+	user, err := server.store.UpdateUser(ctx, arg)
+	if err != nil {
+		if errors.Is(err, db.ErrRecordNotFound) {
+			return nil, status.Errorf(codes.NotFound, "user not found")
+		}
+		return nil, status.Errorf(codes.Internal, "failed to update user: %s", err)
+	}
+
+	rsp := &pbuser.UpdateUserResponse{
+		User: util2.ConvertUser(user),
 	}
 	return rsp, nil
 }

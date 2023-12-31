@@ -3,8 +3,8 @@ package db
 import (
 	"context"
 	"github.com/jackc/pgx/v5"
+	"github.com/ngohoang211020/simplebank/util"
 	"github.com/stretchr/testify/require"
-	"simplebank/util"
 	"testing"
 	"time"
 )
@@ -46,7 +46,7 @@ func TestGetAccount(t *testing.T) {
 	require.Equal(t, account2.Currency, account1.Currency)
 	require.Equal(t, account2.ID, account1.ID)
 
-	require.WithinDuration(t, account2.CreatedAt.Time, account1.CreatedAt.Time, time.Millisecond)
+	require.WithinDuration(t, account2.CreatedAt.UTC(), account1.CreatedAt.UTC(), time.Millisecond)
 }
 
 func TestUpdateAccount(t *testing.T) {
@@ -67,7 +67,7 @@ func TestUpdateAccount(t *testing.T) {
 	require.Equal(t, account2.Currency, account1.Currency)
 	require.Equal(t, account2.ID, account1.ID)
 
-	require.WithinDuration(t, account2.CreatedAt.Time, account1.CreatedAt.Time, time.Millisecond)
+	require.WithinDuration(t, account2.CreatedAt.UTC(), account1.CreatedAt.UTC(), time.Millisecond)
 }
 
 func TestDeleteAccount(t *testing.T) {

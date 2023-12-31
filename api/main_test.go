@@ -2,10 +2,10 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	db "github.com/ngohoang211020/simplebank/db/sqlc"
+	"github.com/ngohoang211020/simplebank/util"
 	"github.com/stretchr/testify/require"
 	"os"
-	db "simplebank/db/sqlc"
-	"simplebank/util"
 	"testing"
 	"time"
 )

@@ -29,8 +29,15 @@ server:
 mock:
 	mockgen -package mockdb -destination db/mock/store.go simplebank/db/sqlc Store
 gen-go:
-	rm -rf pb/
-	mkdir pb
-	protoc --proto_path=proto proto/**/*.proto --go_out=pb
-	protoc --proto_path=proto proto/**/*.proto --go-grpc_out=pb
-.PHONY:	postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 new_migration db_docs db_schema mock sqlc test server gen-go
+	rm -f pb/**/*.go
+	rm -f doc/swagger/*.swagger.json
+	rm -f doc/statik/*.go
+	protoc --proto_path=proto --go_out=pb --go_opt=paths=source_relative \
+	--go-grpc_out=pb --go-grpc_opt=paths=source_relative \
+	--grpc-gateway_out=pb --grpc-gateway_opt=paths=source_relative \
+	--openapiv2_out=doc/swagger --openapiv2_opt=allow_merge=true,merge_file_name=simple_bank \
+	proto/**/*.proto
+	statik -src=./doc/swagger -dest=./doc -ns=simple_bank #Use to embed static file into golang code
+evans:
+	evans --host localhost --port 7070 -r repl
+.PHONY:	postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 new_migration db_docs db_schema mock sqlc test server gen-go evans

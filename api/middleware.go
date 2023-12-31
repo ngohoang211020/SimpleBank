@@ -3,8 +3,8 @@ package api
 import (
 	"errors"
 	"github.com/gin-gonic/gin"
+	"github.com/ngohoang211020/simplebank/token"
 	"net/http"
-	"simplebank/token"
 	"strings"
 )
 

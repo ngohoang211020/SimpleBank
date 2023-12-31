@@ -5,9 +5,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
+	db "github.com/ngohoang211020/simplebank/db/sqlc"
+	"github.com/ngohoang211020/simplebank/util"
 	"net/http"
-	db "simplebank/db/sqlc"
-	"simplebank/util"
 	"time"
 )
 

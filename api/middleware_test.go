@@ -3,10 +3,10 @@ package api
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/ngohoang211020/simplebank/token"
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
-	"simplebank/token"
 	"testing"
 	"time"
 )

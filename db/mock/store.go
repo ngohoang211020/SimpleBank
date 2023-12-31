@@ -6,8 +6,8 @@ package mockdb
 
 import (
 	context "context"
+	db "github.com/ngohoang211020/simplebank/db/sqlc"
 	reflect "reflect"
-	db "simplebank/db/sqlc"
 
 	gomock "github.com/golang/mock/gomock"
 	uuid "github.com/google/uuid"

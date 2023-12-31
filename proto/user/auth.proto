@@ -3,9 +3,9 @@ syntax = "proto3";
 package user;
 
 import "google/protobuf/timestamp.proto";
-import "user/user.proto";
+import "user/common.proto";
 
-option go_package = "/user";
+option go_package = "github.com/ngohoang211020/SimpleBank";
 
 service AuthService{
   rpc Login(LoginUserRequest) returns  (LoginUserResponse) {};

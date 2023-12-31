@@ -7,6 +7,8 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createUser = `-- name: CreateUser :one
@@ -102,4 +104,44 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]Users, 
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateUser = `-- name: UpdateUser :one
+UPDATE users
+SET
+    hashed_password = COALESCE($1, hashed_password),
+    password_changed_at = COALESCE($2, password_changed_at),
+    full_name = COALESCE($3, full_name),
+    email = COALESCE($4, email)
+    WHERE
+        username = $5
+RETURNING username, hashed_password, full_name, email, password_changed_at, created_at
+`
+
+type UpdateUserParams struct {
+	HashedPassword    pgtype.Text        `json:"hashedPassword"`
+	PasswordChangedAt pgtype.Timestamptz `json:"passwordChangedAt"`
+	FullName          pgtype.Text        `json:"fullName"`
+	Email             pgtype.Text        `json:"email"`
+	Username          string             `json:"username"`
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (Users, error) {
+	row := q.db.QueryRow(ctx, updateUser,
+		arg.HashedPassword,
+		arg.PasswordChangedAt,
+		arg.FullName,
+		arg.Email,
+		arg.Username,
+	)
+	var i Users
+	err := row.Scan(
+		&i.Username,
+		&i.HashedPassword,
+		&i.FullName,
+		&i.Email,
+		&i.PasswordChangedAt,
+		&i.CreatedAt,
+	)
+	return i, err
 }

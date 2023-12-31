@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	db "github.com/ngohoang211020/simplebank/db/sqlc"
+	"github.com/ngohoang211020/simplebank/token"
 	"net/http"
-	db "simplebank/db/sqlc"
-	"simplebank/token"
 )
 
 type transferRequest struct {
