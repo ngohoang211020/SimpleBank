@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/ngohoang211020/simplebank/util"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -29,7 +30,7 @@ func createRandomUser(t *testing.T) Users {
 	require.Equal(t, arg.HashedPassword, user.HashedPassword)
 
 	require.NotZero(t, user.CreatedAt)
-	require.True(t, user.PasswordChangedAt.Time.IsZero())
+	require.True(t, user.PasswordChangedAt.UTC().IsZero())
 	return user
 }
 
@@ -48,7 +49,41 @@ func TestGetUser(t *testing.T) {
 	require.Equal(t, account1.Username, account2.Username)
 	require.Equal(t, account1.HashedPassword, account2.HashedPassword)
 
-	require.WithinDuration(t, account2.CreatedAt.Time, account1.CreatedAt.Time, time.Millisecond)
-	require.WithinDuration(t, account2.PasswordChangedAt.Time, account1.PasswordChangedAt.Time, time.Millisecond)
+	require.WithinDuration(t, account2.CreatedAt.UTC(), account1.CreatedAt.UTC(), time.Millisecond)
+	require.WithinDuration(t, account2.PasswordChangedAt.UTC(), account1.PasswordChangedAt.UTC(), time.Millisecond)
 
+}
+
+func TestUpdateUserAllFields(t *testing.T) {
+	oldUser := createRandomUser(t)
+
+	newFullName := util.RandomOwner()
+	newEmail := util.RandomEmail()
+	newPassword := util.RandomString(6)
+	newHashedPassword, err := util.HashPassword(newPassword)
+	require.NoError(t, err)
+
+	updatedUser, err := testStore.UpdateUser(context.Background(), UpdateUserParams{
+		Username: oldUser.Username,
+		FullName: pgtype.Text{
+			String: newFullName,
+			Valid:  true,
+		},
+		Email: pgtype.Text{
+			String: newEmail,
+			Valid:  true,
+		},
+		HashedPassword: pgtype.Text{
+			String: newHashedPassword,
+			Valid:  true,
+		},
+	})
+
+	require.NoError(t, err)
+	require.NotEqual(t, oldUser.HashedPassword, updatedUser.HashedPassword)
+	require.Equal(t, newHashedPassword, updatedUser.HashedPassword)
+	require.NotEqual(t, oldUser.Email, updatedUser.Email)
+	require.Equal(t, newEmail, updatedUser.Email)
+	require.NotEqual(t, oldUser.FullName, updatedUser.FullName)
+	require.Equal(t, newFullName, updatedUser.FullName)
 }
