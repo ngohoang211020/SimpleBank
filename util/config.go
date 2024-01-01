@@ -8,6 +8,7 @@ import (
 // Configuration Config stores all configuration of the application
 // The values are read by viber from a config file of environment variable
 type Configuration struct {
+	Environment          string        `mapstructure:"ENVIRONMENT"`
 	DBDriver             string        `mapstructure:"DB_DRIVER"`
 	DBSource             string        `mapstructure:"DB_SOURCE"`
 	GinPort              string        `mapstructure:"GIN_PORT"`
