@@ -52,6 +52,19 @@ func (server *GrpcServer) CreateUser(ctx context.Context, req *pbuser.CreateUser
 }
 
 func (server *GrpcServer) UpdateUser(ctx context.Context, req *pbuser.UpdateUserRequest) (*pbuser.UpdateUserResponse, error) {
+	authPayload, err := server.authorizeUser(ctx)
+	if err != nil {
+		return nil, unauthenticatedError(err)
+	}
+
+	if authPayload.Username != req.GetUsername() {
+		return nil, status.Errorf(codes.PermissionDenied, "cannot update other user's info")
+	}
+	violations := validateUpdateUserRequest(req)
+	if violations != nil {
+		return nil, invalidArgumentError(violations)
+	}
+
 	arg := db.UpdateUserParams{
 		Username: req.GetUsername(),
 		FullName: pgtype.Text{

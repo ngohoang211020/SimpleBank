@@ -24,3 +24,7 @@ func fieldViolation(field string, err error) *errdetails.BadRequest_FieldViolati
 		Description: err.Error(),
 	}
 }
+
+func unauthenticatedError(err error) error {
+	return status.Errorf(codes.Unauthenticated, "unauthorized: %s", err)
+}
