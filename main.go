@@ -3,11 +3,11 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/lib/pq"
 	"github.com/ngohoang211020/simplebank/api"
@@ -16,6 +16,7 @@ import (
 	"github.com/ngohoang211020/simplebank/gapi"
 	pb "github.com/ngohoang211020/simplebank/pb/user"
 	"github.com/ngohoang211020/simplebank/util"
+	"github.com/ngohoang211020/simplebank/worker"
 	"github.com/rakyll/statik/fs"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -43,9 +44,15 @@ func main() {
 	}
 
 	store := db.NewStore(connPool)
+
+	redisOpt := asynq.RedisClientOpt{Addr: util.Config.RedisPort}
+	taskDistributor := worker.NewRedisTaskDistributor(redisOpt)
+
 	runDBMigration(util.Config.MigrationURL, util.Config.DBSource)
-	go runGatewayServer(&util.Config, store)
-	runGrpcServer(util.Config, store)
+
+	go runTaskProcessor(redisOpt, store)
+	go runGatewayServer(&util.Config, store, taskDistributor)
+	runGrpcServer(&util.Config, store, taskDistributor)
 }
 
 func runDBMigration(migrationURL string, dbSource string) {
@@ -75,8 +82,16 @@ func runGinServer(store db.Store) {
 	}
 }
 
-func runGrpcServer(config util.Configuration, store db.Store) {
-	server, err := gapi.NewGrpcServer(&config, store)
+func runTaskProcessor(redisOpt asynq.RedisClientOpt, store db.Store) {
+	taskProcessor := worker.NewRedisTaskProcessor(redisOpt, store)
+	log.Info().Msg("start task processor")
+	err := taskProcessor.Start()
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to start task processor")
+	}
+}
+func runGrpcServer(config *util.Configuration, store db.Store, distributor worker.TaskDistributor) {
+	server, err := gapi.NewGrpcServer(config, store, distributor)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot create server")
 	}
@@ -85,7 +100,7 @@ func runGrpcServer(config util.Configuration, store db.Store) {
 	pb.RegisterSimpleBankServer(grpcServer, server)
 	reflection.Register(grpcServer)
 
-	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%s", config.GrpcPort))
+	lis, err := net.Listen("tcp", config.GrpcPort)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot create listener")
 	}
@@ -99,8 +114,8 @@ func runGrpcServer(config util.Configuration, store db.Store) {
 
 }
 
-func runGatewayServer(config *util.Configuration, store db.Store) {
-	server, err := gapi.NewGrpcServer(config, store)
+func runGatewayServer(config *util.Configuration, store db.Store, taskDistributor worker.TaskDistributor) {
+	server, err := gapi.NewGrpcServer(config, store, taskDistributor)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot create server")
 	}
@@ -136,7 +151,7 @@ func runGatewayServer(config *util.Configuration, store db.Store) {
 	swaggerHandler := http.StripPrefix("/swagger/", http.FileServer(statikFs))
 	mux.Handle("/swagger/", swaggerHandler)
 
-	listener, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%s", util.Config.GinPort))
+	listener, err := net.Listen("tcp", util.Config.GinPort)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot create listener")
 	}

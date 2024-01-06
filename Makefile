@@ -40,4 +40,9 @@ gen-go:
 	statik -src=./doc/swagger -dest=./doc -ns=simple_bank #Use to embed static file into golang code
 evans:
 	evans --host localhost --port 7070 -r repl
-.PHONY:	postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 new_migration db_docs db_schema mock sqlc test server gen-go evans
+
+redis:
+	docker run --name redis -p 6379:6379 -d redis:7-alpine
+asynqmon:
+	docker run --name asynqmon -p 8079:8080 -d hibiken/asynqmon:0.6.1
+.PHONY:	postgres createdb dropdb migrateup migrateup1 migratedown migratedown1 new_migration db_docs db_schema mock sqlc test server gen-go evans redis asynqmon
