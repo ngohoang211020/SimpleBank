@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/hibiken/asynq"
 	db "github.com/ngohoang211020/simplebank/db/sqlc"
+	"github.com/ngohoang211020/simplebank/mail"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
 )
@@ -14,23 +15,17 @@ const (
 )
 
 type TaskProcessor interface {
-	ProcessTaskSendVerifyEmail(ctx context.Context, task *asynq.Task) error
 	Start() error
+	ProcessTaskSendVerifyEmail(ctx context.Context, task *asynq.Task) error
 }
 
 type RedisTaskProcessor struct {
 	server *asynq.Server
 	store  db.Store
+	mail   mail.EmailSender
 }
 
-func (processor *RedisTaskProcessor) Start() error {
-	mux := asynq.NewServeMux()
-	mux.HandleFunc(TaskSendVerifyEmail, processor.ProcessTaskSendVerifyEmail)
-
-	return processor.server.Start(mux)
-}
-
-func NewRedisTaskProcessor(redisOpt asynq.RedisClientOpt, store db.Store) TaskProcessor {
+func NewRedisTaskProcessor(redisOpt asynq.RedisClientOpt, store db.Store, mail mail.EmailSender) TaskProcessor {
 	logger := &Logger{}
 	redis.SetLogger(logger)
 	server := asynq.NewServer(
@@ -49,5 +44,13 @@ func NewRedisTaskProcessor(redisOpt asynq.RedisClientOpt, store db.Store) TaskPr
 	return &RedisTaskProcessor{
 		server: server,
 		store:  store,
+		mail:   mail,
 	}
+}
+
+func (processor *RedisTaskProcessor) Start() error {
+	mux := asynq.NewServeMux()
+	mux.HandleFunc(TaskSendVerifyEmail, processor.ProcessTaskSendVerifyEmail)
+
+	return processor.server.Start(mux)
 }
